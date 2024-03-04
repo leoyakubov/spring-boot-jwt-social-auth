@@ -2,6 +2,17 @@ spring:
   data:
     mongodb:
       database: spring-boot-jwt-auth
+      port: 27018
+
+  mongodb:
+    embedded:
+      version: 5.0.5
+
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 5.0.5
 
 server:
   port: 8081
