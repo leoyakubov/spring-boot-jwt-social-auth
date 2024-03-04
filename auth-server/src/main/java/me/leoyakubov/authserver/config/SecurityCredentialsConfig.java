@@ -26,6 +26,8 @@ import org.springframework.web.filter.CorsFilter;
 import me.leoyakubov.authserver.service.JwtTokenProvider;
 import me.leoyakubov.authserver.service.UserService;
 
+import java.util.Collections;
+
 @Configuration
 @EnableWebSecurity
 //@EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -47,22 +49,23 @@ public class SecurityCredentialsConfig {
     }
 
     @Bean
-    public SecurityFilterChain myFilterChain(HttpSecurity http) throws Exception {
-       http
-               //.cors(Customizer.withDefaults())
-               .cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer.configurationSource(сorsConfigurationSource()))
-               .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
-               .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-               .exceptionHandling(exConf -> exConf.authenticationEntryPoint((req, resp, ex) -> resp.sendError
-               (HttpServletResponse.SC_UNAUTHORIZED)))
-               .addFilterBefore(new JwtTokenAuthenticationFilter(jwtConfig, tokenProvider, userService),
-               UsernamePasswordAuthenticationFilter.class)
-               .authorizeHttpRequests((authz) -> authz
-                       .requestMatchers(HttpMethod.POST, "/signin").permitAll()
-                       .requestMatchers(HttpMethod.POST, "/facebook/signin").permitAll()
-                       .requestMatchers(HttpMethod.POST, "/users").anonymous()
-                       .anyRequest().authenticated()
-               );
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests((authz) -> authz
+                .requestMatchers("/error").permitAll()
+                .requestMatchers(HttpMethod.POST, "/signin").permitAll()
+                .requestMatchers(HttpMethod.POST, "/facebook/signin").permitAll()
+                .requestMatchers(HttpMethod.POST, "/users").anonymous()
+                .anyRequest().authenticated()
+        );
+
+        http.cors(Customizer.withDefaults());
+        //.cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer.configurationSource(сorsConfigurationSource()))
+        http.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable());
+        http.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http.exceptionHandling(exConf -> exConf.authenticationEntryPoint((req, resp, ex) -> resp.sendError(HttpServletResponse.SC_UNAUTHORIZED)));
+        http.addFilterBefore(new JwtTokenAuthenticationFilter(jwtConfig, tokenProvider, userService),
+                UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -76,7 +79,9 @@ public class SecurityCredentialsConfig {
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         final CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("*");
+        //config.setAllowedOriginPatterns("*");
+        //config.addAllowedOrigin("*");
+        config.setAllowedOriginPatterns(Collections.singletonList("*"));
         config.addAllowedHeader("*");
         config.addAllowedMethod("OPTIONS");
         config.addAllowedMethod("HEAD");
